@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  nocodb:
+    image: nocodb/nocodb:latest
+    ports:
+      - "8080:8080"
+    environment:
+      # 数据库连接配置
+      NC_DB: "${DATABASE_URL}"
+      # API 配置
+      NC_PUBLIC_URL: "${PUBLIC_URL}"
+      # 邮件配置（可选）
+      NC_SMTP_FROM: "${SMTP_FROM}"
+      NC_SMTP_HOST: "${SMTP_HOST}"
+      NC_SMTP_PORT: "${SMTP_PORT}"
+      NC_SMTP_USERNAME: "${SMTP_USERNAME}"
+      NC_SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      # 其他配置
+      NC_MIN_PASSWORD_LENGTH: "8"
+      NC_DISABLE_SIGNUP: "true"  # 禁用公开注册
+    volumes:
+      - ./data:/usr/app/data
+    restart: always
+    networks:
+      - nocodb-net
+
+  # Nginx反向代理配置
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - nocodb
+    restart: always
+    networks:
+      - nocodb-net
+
+networks:
+  nocodb-net:
+    driver: bridge
